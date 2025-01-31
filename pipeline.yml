@@ -1,0 +1,35 @@
+trigger:
+- main
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+variables:
+  solution: './dio_api_tempo/*.sln'
+  buildPlatform: 'Any CPU'
+  buildConfiguration: 'Release'
+
+steps: 
+
+stages:
+- task: UseDotNet@2
+  displayName: "Install .Net SDK'
+  inputs:
+    packageType: 'sdk'
+    version: '8.x'
+
+- script: dotnet restore $(solution)
+  displayName: 'Restore Solution'
+
+- script: dotnet build $(solution) --configuration $(buildConfiguration)
+  displayName: 'Build Solution'
+
+- script: dotnet test $(solution) --configuration $(buildConfiguration) --no-build --collect:"XPlat Code Coverage"
+  displayName: 'Test Solution'
+
+- task: Docker@2
+  inputs: 
+    containerRegistry: 'acrapidemodio'
+    repository: 'api-dio-test'
+    command: 'buildAndPush'
+    DockerFile: './dio_api_tempo/dio_api_tempo/Dockerfile'
